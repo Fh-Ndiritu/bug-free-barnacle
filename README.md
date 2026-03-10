@@ -50,6 +50,6 @@ npx serve .
 1. Push the repo to GitHub.
 2. Go to **Settings → Pages**.
 3. Under *Build and deployment*, set **Source** to `Deploy from a branch`, branch `main`, folder `/ (root)`.
-4. Save. GitHub will publish the site at `https://<user>.github.io/<repo>/`.
+4. Save. GitHub will publish the site at `https://fh-ndiritu.github.io/bug-free-barnacle/`.
 
 The root `index.html` redirects visitors to the prototype automatically. The admin converter tool is accessible at `/admin/`.
