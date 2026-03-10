@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Converter Tool | Cash is Clear Maximizer</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Open+Sans:wght@400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="admin-container">
+        <header>
+            <h1>Admin Converter Tool</h1>
+            <p>Upload the Cash is Clear Maximizer Excel or CSV file to generate the JSON data.</p>
+        </header>
+
+        <main>
+            <div class="upload-area" id="drop-zone">
+                <div class="upload-icon">📁</div>
+                <h3>Drag & Drop Data File</h3>
+                <p>or click to select file</p>
+                <input type="file" id="file-input" accept=".xlsx, .xls, .csv" hidden>
+                <button class="btn btn-primary" onclick="document.getElementById('file-input').click()">Browse Files</button>
+            </div>
+
+            <div id="status" class="status-message hidden">
+                <!-- Status messages injected here -->
+            </div>
+
+            <div id="actions" class="actions-area hidden">
+                <button id="download-btn" class="btn btn-accent">Download data.json</button>
+            </div>
+        </main>
+    </div>
+
+    <!-- SheetJS for parsing Excel -->
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>

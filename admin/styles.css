@@ -1,0 +1,140 @@
+:root {
+    --brand-dark-blue: #004478;
+    --brand-darker-blue: #164374;
+    --brand-yellow: #ffcb05;
+    --brand-yellow-hover: #ffc400;
+    --brand-light-blue: #97d1e8;
+    --brand-light-grey: #ecf0f1;
+    --brand-white: #ffffff;
+    --text-color: #333333;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: 'Open Sans', sans-serif;
+    background-color: var(--brand-light-grey);
+    color: var(--text-color);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+}
+
+h1, h2, h3 {
+    font-family: 'Montserrat', sans-serif;
+    color: var(--brand-dark-blue);
+}
+
+.admin-container {
+    background-color: var(--brand-white);
+    padding: 3rem;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    max-width: 600px;
+    width: 100%;
+    text-align: center;
+}
+
+header {
+    margin-bottom: 2rem;
+}
+
+header h1 {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+}
+
+header p {
+    color: #666;
+}
+
+.upload-area {
+    border: 3px dashed var(--brand-light-blue);
+    border-radius: 8px;
+    padding: 3rem 2rem;
+    transition: all 0.3s ease;
+    background-color: #f9fbfd;
+    cursor: pointer;
+    margin-bottom: 2rem;
+}
+
+.upload-area:hover, .upload-area.dragover {
+    border-color: var(--brand-dark-blue);
+    background-color: #f0f7fb;
+}
+
+.upload-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+}
+
+.upload-area h3 {
+    margin-bottom: 0.5rem;
+    font-size: 1.25rem;
+}
+
+.upload-area p {
+    color: #888;
+    margin-bottom: 1.5rem;
+}
+
+.btn {
+    font-family: 'Open Sans', sans-serif;
+    font-weight: 600;
+    padding: 0.75rem 2rem;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 1rem;
+}
+
+.btn-primary {
+    background-color: var(--brand-dark-blue);
+    color: var(--brand-white);
+}
+
+.btn-primary:hover {
+    background-color: var(--brand-darker-blue);
+}
+
+.btn-accent {
+    background-color: var(--brand-yellow);
+    color: var(--brand-dark-blue);
+    font-size: 1.1rem;
+    padding: 1rem 3rem;
+    box-shadow: 0 4px 6px rgba(255, 203, 5, 0.3);
+}
+
+.btn-accent:hover {
+    background-color: var(--brand-yellow-hover);
+    transform: translateY(-2px);
+}
+
+.status-message {
+    padding: 1rem;
+    border-radius: 6px;
+    margin-bottom: 1.5rem;
+    font-size: 0.95rem;
+}
+
+.status-success {
+    background-color: #e6f7eb;
+    color: #2e7d32;
+    border: 1px solid #c8e6c9;
+}
+
+.status-error {
+    background-color: #fce4e4;
+    color: #c62828;
+    border: 1px solid #ffcdd2;
+}
+
+.hidden {
+    display: none;
+}

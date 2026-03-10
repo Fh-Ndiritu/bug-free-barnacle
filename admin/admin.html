@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Converter Tool | Cash is Clear Maximizer</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Open+Sans:wght@400;600&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --brand-dark-blue: #004478;
+            --brand-darker-blue: #164374;
+            --brand-yellow: #ffcb05;
+            --brand-yellow-hover: #ffc400;
+            --brand-light-blue: #97d1e8;
+            --brand-light-grey: #ecf0f1;
+            --brand-white: #ffffff;
+            --text-color: #333333;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Open Sans', sans-serif;
+            background-color: var(--brand-light-grey);
+            color: var(--text-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        h1,
+        h2,
+        h3 {
+            font-family: 'Montserrat', sans-serif;
+            color: var(--brand-dark-blue);
+        }
+
+        .admin-container {
+            background-color: var(--brand-white);
+            padding: 3rem;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            max-width: 600px;
+            width: 100%;
+            text-align: center;
+        }
+
+        header {
+            margin-bottom: 2rem;
+        }
+
+        header h1 {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        header p {
+            color: #666;
+        }
+
+        .upload-area {
+            border: 3px dashed var(--brand-light-blue);
+            border-radius: 8px;
+            padding: 3rem 2rem;
+            transition: all 0.3s ease;
+            background-color: #f9fbfd;
+            cursor: pointer;
+            margin-bottom: 2rem;
+        }
+
+        .upload-area:hover,
+        .upload-area.dragover {
+            border-color: var(--brand-dark-blue);
+            background-color: #f0f7fb;
+        }
+
+        .upload-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        .upload-area h3 {
+            margin-bottom: 0.5rem;
+            font-size: 1.25rem;
+        }
+
+        .upload-area p {
+            color: #888;
+            margin-bottom: 1.5rem;
+        }
+
+        .btn {
+            font-family: 'Open Sans', sans-serif;
+            font-weight: 600;
+            padding: 0.75rem 2rem;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 1rem;
+        }
+
+        .btn-primary {
+            background-color: var(--brand-dark-blue);
+            color: var(--brand-white);
+        }
+
+        .btn-primary:hover {
+            background-color: var(--brand-darker-blue);
+        }
+
+        .btn-accent {
+            background-color: var(--brand-yellow);
+            color: var(--brand-dark-blue);
+            font-size: 1.1rem;
+            padding: 1rem 3rem;
+            box-shadow: 0 4px 6px rgba(255, 203, 5, 0.3);
+        }
+
+        .btn-accent:hover {
+            background-color: var(--brand-yellow-hover);
+            transform: translateY(-2px);
+        }
+
+        .status-message {
+            padding: 1rem;
+            border-radius: 6px;
+            margin-bottom: 1.5rem;
+            font-size: 0.95rem;
+        }
+
+        .status-success {
+            background-color: #e6f7eb;
+            color: #2e7d32;
+            border: 1px solid #c8e6c9;
+        }
+
+        .status-error {
+            background-color: #fce4e4;
+            color: #c62828;
+            border: 1px solid #ffcdd2;
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="admin-container">
+        <header>
+            <h1>Admin Converter Tool</h1>
+            <p>Upload the Cash is Clear Maximizer Excel or CSV file to generate the JSON data.</p>
+        </header>
+
+        <main>
+            <div class="upload-area" id="drop-zone">
+                <div class="upload-icon">📁</div>
+                <h3>Drag & Drop Data File</h3>
+                <p>or click to select file</p>
+                <input type="file" id="file-input" accept=".xlsx, .xls, .csv" hidden>
+                <button class="btn btn-primary" onclick="document.getElementById('file-input').click()">Browse
+                    Files</button>
+            </div>
+
+            <div id="status" class="status-message hidden">
+                <!-- Status messages injected here -->
+            </div>
+
+            <div id="actions" class="actions-area hidden">
+                <button id="download-btn" class="btn btn-accent">Download data.json</button>
+            </div>
+        </main>
+    </div>
+
+    <!-- SheetJS for parsing Excel -->
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const dropZone = document.getElementById('drop-zone');
+            const fileInput = document.getElementById('file-input');
+            const statusDiv = document.getElementById('status');
+            const actionsArea = document.getElementById('actions');
+            const downloadBtn = document.getElementById('download-btn');
+
+            let parsedData = null;
+
+            // Drag & Drop Handlers
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                dropZone.addEventListener(eventName, preventDefaults, false);
+            });
+
+            function preventDefaults(e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+
+            ['dragenter', 'dragover'].forEach(eventName => {
+                dropZone.addEventListener(eventName, () => {
+                    dropZone.classList.add('dragover');
+                }, false);
+            });
+
+            ['dragleave', 'drop'].forEach(eventName => {
+                dropZone.addEventListener(eventName, () => {
+                    dropZone.classList.remove('dragover');
+                }, false);
+            });
+
+            dropZone.addEventListener('drop', (e) => {
+                const dt = e.dataTransfer;
+                const files = dt.files;
+                if (files.length) handleFile(files[0]);
+            });
+
+            fileInput.addEventListener('change', function () {
+                if (this.files.length) handleFile(this.files[0]);
+            });
+
+            function handleFile(file) {
+                showStatus('Processing...', '');
+                actionsArea.classList.add('hidden');
+                parsedData = null;
+
+                const reader = new FileReader();
+
+                reader.onload = function (e) {
+                    try {
+                        const data = new Uint8Array(e.target.result);
+                        // Read workbook
+                        const workbook = XLSX.read(data, { type: 'array' });
+                        // Treat first sheet as truth
+                        const firstSheetName = workbook.SheetNames[0];
+                        const worksheet = workbook.Sheets[firstSheetName];
+
+                        // Convert to JSON
+                        // We know headers are on row 4 (index 3), so we will read as array of arrays first
+                        const jsonRaw = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '' });
+
+                        // The headers are at row index 4
+                        if (jsonRaw.length <= 5) {
+                            showStatus('Error decoding file:', 'File does not have enough rows.', true);
+                            return;
+                        }
+
+                        const headers = jsonRaw[4].map(h => (h || '').toString().trim());
+
+                        // Filter out empty rows and build objects
+                        const validData = [];
+                        for (let i = 5; i < jsonRaw.length; i++) {
+                            const row = jsonRaw[i];
+                            // Skip if the first cell (# or strategy name) is deeply empty
+                            if (!row[0] && !row[1]) continue;
+
+                            let obj = {};
+                            let hasContent = false;
+                            for (let j = 0; j < headers.length; j++) {
+                                if (headers[j]) { // Only save columns that have a header
+                                    obj[headers[j]] = row[j] !== undefined ? row[j] : '';
+                                    if (row[j] !== '' && row[j] !== undefined) hasContent = true;
+                                }
+                            }
+                            if (hasContent) {
+                                validData.push(obj);
+                            }
+                        }
+
+                        if (validData.length === 0) {
+                            showStatus('Error parsing file:', 'No valid data rows found after headers.', true);
+                            return;
+                        }
+
+                        parsedData = validData;
+                        showStatus(`Successfully parsed ${parsedData.length} strategies.`, '');
+                        actionsArea.classList.remove('hidden');
+
+                    } catch (error) {
+                        console.error(error);
+                        showStatus('Error processing file:', error.message, true);
+                    }
+                };
+
+                reader.readAsArrayBuffer(file);
+            }
+
+            function showStatus(title, message, isError = false) {
+                statusDiv.innerHTML = `<strong>${title}</strong> ${message}`;
+                statusDiv.className = `status-message ${isError ? 'status-error' : 'status-success'}`;
+                statusDiv.classList.remove('hidden');
+            }
+
+            downloadBtn.addEventListener('click', () => {
+                if (!parsedData) return;
+
+                const jsonStr = JSON.stringify(parsedData, null, 2);
+                const blob = new Blob([jsonStr], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'data.json';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            });
+        });
+    </script>
+</body>
+
+</html>
