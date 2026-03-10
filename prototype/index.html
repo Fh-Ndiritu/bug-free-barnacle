@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cash is Clear Maximizer</title>
+    <!-- Google Fonts -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&family=Open+Sans:wght@400;600;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+
+<body>
+
+    <!-- Test Panel (Phase 1 Only) -->
+    <div id="test-panel" class="test-panel">
+        <div class="test-panel-inner">
+            <h2>DEVELOPER TEST PANEL</h2>
+            <p>Load the local data to start the prototype.</p>
+
+            <div class="upload-area" id="test-drop-zone">
+                <i class="fa-solid fa-file-import test-icon"></i>
+                <p>Drag <code>data.json</code> here or click below</p>
+                <input type="file" id="test-file-input" accept=".json" hidden>
+                <button class="btn btn-outline" onclick="document.getElementById('test-file-input').click()">Upload
+                    JSON</button>
+            </div>
+
+            <p class="test-panel-or">OR</p>
+            <button id="load-default-btn" class="btn btn-primary">Load Default data.json</button>
+        </div>
+    </div>
+
+    <!-- Main App Container -->
+    <div id="app-container" class="app-container hidden">
+        <!-- Sidebar Filters -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h2>Filters</h2>
+                <button id="reset-filters" class="btn btn-text"><i class="fa-solid fa-rotate-right"></i> Reset</button>
+            </div>
+            <div class="filters-container" id="filters-container">
+                <!-- Filters injected by JS -->
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="app-header">
+                <div class="header-logo">
+                    <i class="fa-solid fa-money-bill-trend-up"></i>
+                    <div>
+                        <h1>Cash is Clear Maximizer</h1>
+                        <p>Opportunities to Optimize Cash Flow & Profit</p>
+                    </div>
+                </div>
+
+                <div class="header-stats">
+                    <div class="stat-box">
+                        <span id="total-results" class="stat-number">0</span>
+                        <span class="stat-label">Strategies Found</span>
+                    </div>
+                </div>
+            </header>
+
+            <div class="search-bar">
+                <i class="fa-solid fa-search"></i>
+                <input type="text" id="search-input" placeholder="Search strategies, departments, or keywords...">
+            </div>
+
+            <div id="required-filters-container" class="required-filters">
+                <h3>Select Department and Difficulty to view strategies:</h3>
+                <div class="required-filters-grid">
+                    <div class="required-filter-group">
+                        <label for="req-dept-select">Department <span class="required-star">*</span></label>
+                        <select id="req-dept-select">
+                            <option value="">-- Select Department --</option>
+                        </select>
+                    </div>
+                    <div class="required-filter-group">
+                        <label for="req-diff-select">Difficulty <span class="required-star">*</span></label>
+                        <select id="req-diff-select">
+                            <option value="">-- Select Difficulty --</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="table-responsive hidden" id="strategies-table-container">
+                <table class="strategies-table">
+                    <thead>
+                        <tr>
+                            <th class="sticky-col width-narrow sortable" data-sort="#"># <i
+                                    class="fa-solid fa-sort sort-icon"></i></th>
+                            <th class="sticky-col sticky-col-2 width-wide sortable" data-sort="Strategy">Strategy <i
+                                    class="fa-solid fa-sort sort-icon"></i></th>
+                            <th class="sortable" data-sort="Decision Control?">Decision Control? <i
+                                    class="fa-solid fa-sort sort-icon"></i></th>
+                            <th class="sortable" data-sort="How long?">How long? <i
+                                    class="fa-solid fa-sort sort-icon"></i></th>
+                            <th class="sortable" data-sort="Profit Direction?">Profit Direction? <i
+                                    class="fa-solid fa-sort sort-icon"></i></th>
+                            <th class="sortable" data-sort="Spend Rate">Spend Rate <i
+                                    class="fa-solid fa-sort sort-icon"></i></th>
+                            <th class="sortable" data-sort="Cash Timing">Cash Timing <i
+                                    class="fa-solid fa-sort sort-icon"></i></th>
+                            <th class="sortable" data-sort="Mentor">Mentor <i class="fa-solid fa-sort sort-icon"></i>
+                            </th>
+                            <th class="sortable" data-sort="Symptom/Root">Symptom/Root <i
+                                    class="fa-solid fa-sort sort-icon"></i></th>
+                            <th class="sortable" data-sort="Pillar">Pillar <i class="fa-solid fa-sort sort-icon"></i>
+                            </th>
+                            <th class="sortable" data-sort="Frequency">Frequency <i
+                                    class="fa-solid fa-sort sort-icon"></i></th>
+                            <th class="sortable" data-sort="Short term benefit">Short term benefit <i
+                                    class="fa-solid fa-sort sort-icon"></i></th>
+                            <th class="sortable" data-sort="Use when?">Use when? <i
+                                    class="fa-solid fa-sort sort-icon"></i></th>
+                            <th class="sortable" data-sort="Bookkeeping">Bookkeeping <i
+                                    class="fa-solid fa-sort sort-icon"></i></th>
+                            <th class="sortable" data-sort="Financial Reports">Financial Reports <i
+                                    class="fa-solid fa-sort sort-icon"></i></th>
+                            <th class="sortable" data-sort="Risk">Risk <i class="fa-solid fa-sort sort-icon"></i></th>
+                        </tr>
+                    </thead>
+                    <tbody id="strategies-tbody">
+                        <!-- Rows injected by JS -->
+                    </tbody>
+                </table>
+            </div>
+
+            <div id="empty-state" class="empty-state hidden">
+                <i class="fa-solid fa-lock"></i>
+                <h3>Select Filters to Unlock Data</h3>
+                <p>Please select a Department and Category above to view available strategies.</p>
+            </div>
+
+            <div id="no-results-state" class="empty-state hidden">
+                <i class="fa-solid fa-box-open"></i>
+                <h3>No Strategies Found</h3>
+                <p>Try adjusting your side filters or search term to find more opportunities.</p>
+                <button class="btn btn-primary" onclick="document.getElementById('reset-filters').click()">Clear Side
+                    Filters</button>
+            </div>
+        </main>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+
+</html>
