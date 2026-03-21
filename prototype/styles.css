@@ -158,19 +158,24 @@ h5 {
 /* App Layout */
 .app-container {
     display: flex;
-    min-height: 100vh;
+    flex-direction: column;
+    height: 100vh;
+}
+
+.content-area {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
 }
 
 .sidebar {
     width: 320px;
     background: var(--brand-white);
     box-shadow: 2px 0 10px rgba(0, 0, 0, 0.05);
-    height: 100vh;
-    position: sticky;
-    top: 0;
     display: flex;
     flex-direction: column;
-    z-index: 10;
+    flex-shrink: 0;
+    overflow-y: auto;
 }
 
 .sidebar-header {
@@ -279,25 +284,16 @@ h5 {
     border-radius: 10px;
 }
 
-/* Main Content */
-.main-content {
-    flex: 1;
-    min-width: 0;
-    /* Prevent flex child from overflowing the container */
-    display: flex;
-    flex-direction: column;
-    background-color: #f7f9fa;
-    overflow: hidden;
-    /* Ensure nothing bleeds out */
-}
-
+/* Full-Width Header */
 .app-header {
     background: var(--brand-blue);
     color: var(--brand-white);
-    padding: 2rem 3rem;
+    padding: 1rem 2rem;
     display: flex;
     justify-content: space-between;
     align-items: center;
+    flex-shrink: 0;
+    z-index: 20;
 }
 
 .header-logo {
@@ -306,20 +302,45 @@ h5 {
     gap: 1rem;
 }
 
-.header-logo i {
-    font-size: 2.5rem;
-    color: var(--brand-yellow);
+.header-logo-img {
+    height: 60px;
+    width: auto;
+    border-radius: 8px;
+    background: var(--brand-white);
+    padding: 4px;
 }
 
 .header-logo h1 {
     font-size: 1.8rem;
     margin: 0;
+    color: var(--brand-white);
 }
 
 .header-logo p {
     color: var(--brand-light-blue);
     margin: 0;
     font-size: 0.9rem;
+}
+
+/* Main Content */
+.main-content {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    background-color: #f7f9fa;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+/* Footer */
+.app-footer {
+    background: var(--brand-blue);
+    color: var(--brand-light-blue);
+    text-align: center;
+    padding: 0.75rem 2rem;
+    font-size: 0.85rem;
+    flex-shrink: 0;
 }
 
 .stat-box {
@@ -346,7 +367,7 @@ h5 {
 
 /* Search Bar */
 .search-bar {
-    padding: 1.5rem 3rem;
+    padding: 1.25rem 3rem;
     background: var(--brand-white);
     border-bottom: 1px solid var(--border-color);
     display: flex;
@@ -355,6 +376,7 @@ h5 {
     top: 0;
     z-index: 5;
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.02);
+    flex-shrink: 0;
 }
 
 .search-bar i {
