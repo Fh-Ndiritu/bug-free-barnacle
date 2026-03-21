@@ -46,13 +46,14 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     ];
 
+    const DEV_STORAGE_KEY = 'dev_data_json';
+
     // DOM Elements
     const testPanel = document.getElementById('test-panel');
     const appContainer = document.getElementById('app-container');
+    const devUploadBtn = document.getElementById('dev-upload-btn');
     const testDropZone = document.getElementById('test-drop-zone');
     const testFileInput = document.getElementById('test-file-input');
-    const loadDefaultBtn = document.getElementById('load-default-btn');
-
     const filtersContainer = document.getElementById('filters-container');
     const strategiesTableContainer = document.getElementById('strategies-table-container');
     const strategiesTbody = document.getElementById('strategies-tbody');
@@ -68,30 +69,21 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentSortColumn = null;
     let currentSortDirection = 'asc'; // 'asc' or 'desc'
 
-    // Test Panel Setup
+    // Auto-load from localStorage if data was previously uploaded (DEV ONLY)
+    const savedData = localStorage.getItem(DEV_STORAGE_KEY);
+    if (savedData) {
+        try {
+            initApp(JSON.parse(savedData));
+        } catch (e) {
+            localStorage.removeItem(DEV_STORAGE_KEY);
+        }
+    }
 
-    // Attempt auto-load first
-    fetch('data.json')
-        .then(res => {
-            if (!res.ok) throw new Error('data.json not found');
-            return res.json();
-        })
-        .then(data => initApp(data))
-        .catch(err => {
-            console.log('No default data.json loaded automatically, please upload or click load manually.');
-        });
-
-    loadDefaultBtn.addEventListener('click', () => {
-        fetch('data.json')
-            .then(res => {
-                if (!res.ok) throw new Error('Network response was not ok');
-                return res.json();
-            })
-            .then(data => initApp(data))
-            .catch(err => {
-                alert('Could not load data.json. Error: ' + err.message);
-                console.error(err);
-            });
+    devUploadBtn.addEventListener('click', () => {
+        localStorage.removeItem(DEV_STORAGE_KEY);
+        appContainer.classList.add('hidden');
+        testPanel.classList.remove('hidden');
+        testFileInput.value = '';
     });
 
     testDropZone.addEventListener('click', () => testFileInput.click());
@@ -109,14 +101,28 @@ document.addEventListener('DOMContentLoaded', () => {
     function handleTestFile(file) {
         const reader = new FileReader();
         reader.onload = e => {
-            let data;
+            let parsed;
             try {
-                data = JSON.parse(e.target.result);
+                parsed = JSON.parse(e.target.result);
             } catch (err) {
-                alert('Invalid JSON file.');
+                alert('Invalid JSON file — could not parse: ' + err.message);
                 return;
             }
+
+            // Accept a plain array or a wrapped object ({ strategies: [...], data: [...], etc.)
+            let data = Array.isArray(parsed)
+                ? parsed
+                : (Array.isArray(parsed.strategies) ? parsed.strategies
+                :  Array.isArray(parsed.data)       ? parsed.data
+                :  null);
+
+            if (!data) {
+                alert('Invalid data.json format — expected a JSON array of strategy objects.');
+                return;
+            }
+
             try {
+                localStorage.setItem(DEV_STORAGE_KEY, JSON.stringify(data));
                 initApp(data);
             } catch (err) {
                 alert('Error initializing app: ' + err.message);

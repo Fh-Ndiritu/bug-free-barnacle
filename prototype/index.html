@@ -20,18 +20,15 @@
     <div id="test-panel" class="test-panel">
         <div class="test-panel-inner">
             <h2>DEVELOPER TEST PANEL</h2>
-            <p>Load the local data to start the prototype.</p>
+            <p>Upload a <code>data.json</code> file to start the prototype.</p>
 
             <div class="upload-area" id="test-drop-zone">
                 <i class="fa-solid fa-file-import test-icon"></i>
                 <p>Drag <code>data.json</code> here or click below</p>
                 <input type="file" id="test-file-input" accept=".json" hidden>
-                <button class="btn btn-outline" onclick="document.getElementById('test-file-input').click()">Upload
-                    JSON</button>
+                <button class="btn btn-outline">Upload JSON</button>
             </div>
 
-            <p class="test-panel-or">OR</p>
-            <button id="load-default-btn" class="btn btn-primary">Load Default data.json</button>
         </div>
     </div>
 
@@ -53,6 +50,10 @@
                     <span id="total-results" class="stat-number">0</span>
                     <span class="stat-label">Strategies Found</span>
                 </div>
+                <!-- DEV ONLY: removed before production -->
+                <button id="dev-upload-btn" class="btn dev-upload-btn" title="Upload a new data.json">
+                    <i class="fa-solid fa-upload"></i> Upload Data
+                </button>
             </div>
         </header>
 

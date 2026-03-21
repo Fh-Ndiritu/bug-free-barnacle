@@ -365,6 +365,22 @@ h5 {
     letter-spacing: 1px;
 }
 
+/* DEV ONLY — removed before production */
+.dev-upload-btn {
+    background: rgba(255, 255, 255, 0.12);
+    color: var(--brand-white);
+    border: 1px dashed rgba(255, 255, 255, 0.4);
+    font-size: 0.8rem;
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.2s;
+    align-self: center;
+}
+.dev-upload-btn:hover {
+    background: rgba(255, 255, 255, 0.22);
+}
+
 /* Search Bar */
 .search-bar {
     padding: 1.25rem 3rem;
