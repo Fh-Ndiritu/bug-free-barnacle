@@ -4,31 +4,29 @@ document.addEventListener('DOMContentLoaded', () => {
     // Single source of truth for what the prototype app expects.
     // Mark critical:true for columns the app cannot function without.
     const EXPECTED_COLUMNS = [
-        { key: '#',                  critical: false },
-        { key: 'Strategy',           critical: true  },
-        { key: 'Key Department',     critical: true  },
-        { key: 'Difficulty',         critical: true  },
-        { key: 'Category',           critical: false },
-        { key: 'Decision Control?',  critical: false },
-        { key: 'How long?',          critical: false },
-        { key: 'Profit Direction?',  critical: false },
-        { key: 'Spend Rate',         critical: false },
-        { key: 'Cash Timing',        critical: false },
-        { key: 'Mentor',             critical: false },
-        { key: 'Symptom/Root',       critical: false },
-        { key: 'Pillar',             critical: false },
-        { key: 'Frequency',          critical: false },
-        { key: 'Short term benefit', critical: false },
-        { key: 'Use when?',          critical: false },
-        { key: 'Bookkeeping',        critical: false },
-        { key: 'Financial Reports',  critical: false },
-        { key: 'Risk',               critical: false },
-        { key: 'Solo/Micro',         critical: false },
-        { key: 'Large Co.',          critical: false },
-        { key: 'Non-profit',         critical: false },
-        { key: 'Personal',           critical: false },
-        { key: 'Everyone',           critical: false },
-        { key: 'Free',               critical: false },
+        { key: '#',                       critical: false },
+        { key: 'Strategy',                critical: true  },
+        { key: 'Key Department',          critical: true  },
+        { key: 'Difficulty',              critical: true  },
+        { key: 'Cash Position',           critical: true  },
+        { key: 'Risk',                    critical: true  },
+        { key: 'Time',                    critical: false },
+        { key: 'Who controls strategy?',  critical: false },
+        { key: 'Cash Spend Timing',       critical: false },
+        { key: 'Cash Receipt Timing',     critical: false },
+        { key: 'Profit?',                 critical: false },
+        { key: 'Symptom or Root Cause',   critical: false },
+        { key: 'Category',                critical: false },
+        { key: 'Mentor',                  critical: false },
+        { key: 'Pillar',                  critical: false },
+        { key: 'Frequency',               critical: false },
+        { key: 'Short term benefit',      critical: false },
+        { key: 'Find in Bookkeeping?',    critical: false },
+        { key: 'Find in  Reports',        critical: false },
+        { key: 'Solo/Micro',              critical: false },
+        { key: 'Large Co.',               critical: false },
+        { key: 'Non-profit',              critical: false },
+        { key: 'Every Company?',          critical: false },
     ];
 
     const HEADER_SCAN_ROWS  = 15; // max rows to scan when looking for the header
@@ -62,6 +60,7 @@ document.addEventListener('DOMContentLoaded', () => {
     ['dragleave', 'drop'].forEach(ev => {
         dropZone.addEventListener(ev, () => dropZone.classList.remove('dragover'));
     });
+    dropZone.addEventListener('click', () => fileInput.click());
     dropZone.addEventListener('drop', e => {
         if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
     });
@@ -216,9 +215,23 @@ document.addEventListener('DOMContentLoaded', () => {
         return map;
     }
 
-    // Convert rows after the header row into objects keyed by raw header name.
+    // Build a raw-header → canonical-key lookup once per sheet.
+    // Recognised headers (case/space insensitive) are mapped to the canonical
+    // key the prototype expects; unrecognised extras are kept as-is.
+    function buildRawToCanonical(rawHeaders) {
+        const map = {};
+        rawHeaders.forEach(h => {
+            const n = normalize(h);
+            const match = normalizedExpected.find(e => e.norm === n);
+            if (match) map[h] = match.key;
+        });
+        return map;
+    }
+
+    // Convert rows after the header row into objects keyed by canonical name.
     // Rows with fewer than 2 non-empty cells are skipped.
     function parseRows(rows, headerRowIndex, rawHeaders) {
+        const rawToCanonical = buildRawToCanonical(rawHeaders);
         const data = [];
         let skipped = 0;
 
@@ -229,7 +242,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const obj = {};
             rawHeaders.forEach((h, j) => {
-                if (h) obj[h] = row[j] !== undefined ? row[j] : '';
+                if (!h) return;
+                const key = rawToCanonical[h] || h; // canonical if recognised, else keep raw
+                obj[key] = row[j] !== undefined ? row[j] : '';
             });
             data.push(obj);
         }
@@ -247,14 +262,15 @@ document.addEventListener('DOMContentLoaded', () => {
         detectionDiv.className = 'preview-detection';
         if (headerRowIndex >= 0) {
             detectionDiv.innerHTML =
-                `Headers detected on <strong>row ${headerRowIndex + 1}</strong> ` +
-                `of sheet <strong>"${sheetName}"</strong> — ` +
-                `<strong>${data.length}</strong> data rows found` +
+                `<i class="fa-solid fa-circle-check" style="color:#2e7d32"></i> ` +
+                `Headers on <strong>row ${headerRowIndex + 1}</strong> of <strong>"${sheetName}"</strong> — ` +
+                `<strong>${data.length}</strong> strategies found` +
                 (skipped > 0 ? `, <strong>${skipped}</strong> blank rows skipped` : '') + '.';
         } else {
             detectionDiv.innerHTML =
-                `<strong>Could not detect headers</strong> in sheet <strong>"${sheetName}"</strong>. ` +
-                `No row in the first ${HEADER_SCAN_ROWS} rows had ${MIN_HEADER_MATCHES}+ matching column names.`;
+                `<i class="fa-solid fa-circle-xmark" style="color:#c62828"></i> ` +
+                `<strong>Could not detect headers</strong> in <strong>"${sheetName}"</strong>. ` +
+                `No row in the first ${HEADER_SCAN_ROWS} rows matched ${MIN_HEADER_MATCHES}+ column names.`;
         }
         previewSection.appendChild(detectionDiv);
 

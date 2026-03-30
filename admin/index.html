@@ -3,47 +3,71 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Converter Tool | Cash is Clear Maximizer</title>
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Open+Sans:wght@400;600&display=swap" rel="stylesheet">
+    <base href="/admin/">
+    <title>Admin Converter | Cash is Clear&#174; Maximizer</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+
+    <header class="app-header">
+        <div class="header-logo">
+            <img src="../prototype/cash_is_clear_logo.jpeg" alt="Cash is Clear Logo" class="header-logo-img">
+            <div>
+                <h1>Cash is Clear&#174; Maximizer</h1>
+                <p>Admin — Data Converter Tool</p>
+            </div>
+        </div>
+        <a href="../prototype/" class="btn btn-outline-white">
+            <i class="fa-solid fa-arrow-left"></i> Back to App
+        </a>
+    </header>
+
     <div class="page-wrapper">
 
         <!-- Upload Card -->
-        <div class="admin-container">
-            <header>
-                <h1>Admin Converter Tool</h1>
-                <p>Upload the Cash is Clear Maximizer Excel or CSV file to generate <code>data.json</code>.</p>
-            </header>
-
-            <main>
-                <div class="upload-area" id="drop-zone">
-                    <div class="upload-icon">📁</div>
-                    <h3>Drag &amp; Drop Data File</h3>
-                    <p>Supports .xlsx, .xls, .csv</p>
-                    <input type="file" id="file-input" accept=".xlsx, .xls, .csv" hidden>
-                    <button class="btn btn-primary" onclick="document.getElementById('file-input').click()">Browse Files</button>
+        <div class="card">
+            <div class="card-header">
+                <i class="fa-solid fa-file-arrow-up card-icon"></i>
+                <div>
+                    <h2>Convert Excel to JSON</h2>
+                    <p>Upload your Cash is Clear Maximizer <code>.xlsx</code> file to generate <code>data.json</code> for the app.</p>
                 </div>
+            </div>
 
-                <!-- Sheet Picker (shown only when workbook has multiple sheets) -->
-                <div id="sheet-picker" class="sheet-picker hidden">
-                    <label for="sheet-select"><strong>Multiple sheets found — select one to process:</strong></label>
-                    <select id="sheet-select"></select>
-                </div>
+            <div class="upload-area" id="drop-zone">
+                <i class="fa-solid fa-cloud-arrow-up upload-icon"></i>
+                <p class="upload-title">Drag &amp; drop your file here</p>
+                <p class="upload-sub">Supports .xlsx, .xls, .csv</p>
+                <input type="file" id="file-input" accept=".xlsx, .xls, .csv" hidden>
+                <button class="btn btn-primary">Browse Files</button>
+            </div>
 
-                <div id="status" class="status-message hidden"></div>
+            <!-- Sheet Picker (shown only when workbook has multiple sheets) -->
+            <div id="sheet-picker" class="sheet-picker hidden">
+                <i class="fa-solid fa-table-cells-large"></i>
+                <label for="sheet-select"><strong>Multiple sheets found — select one to process:</strong></label>
+                <select id="sheet-select"></select>
+            </div>
 
-                <div id="actions" class="actions-area hidden">
-                    <button id="download-btn" class="btn btn-accent">⬇ Download data.json</button>
-                </div>
-            </main>
+            <div id="status" class="status-message hidden"></div>
+
+            <div id="actions" class="actions-area hidden">
+                <button id="download-btn" class="btn btn-accent">
+                    <i class="fa-solid fa-download"></i> Download data.json
+                </button>
+            </div>
         </div>
 
         <!-- Preview Section (shown after parsing) -->
         <div id="preview-section" class="preview-section hidden"></div>
 
     </div>
+
+    <footer class="app-footer">
+        <p>&copy;2026 Safeer Management LLC</p>
+    </footer>
 
     <!-- SheetJS for parsing Excel -->
     <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>

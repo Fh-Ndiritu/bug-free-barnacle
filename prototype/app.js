@@ -3,45 +3,50 @@ document.addEventListener('DOMContentLoaded', () => {
     let strategies = [];
     let filteredStrategies = [];
     let activeFilters = {};
+    let activePrimaryFilters = {};
     let activeSearch = '';
 
-    // Filter configuration defining which columns to use as filters (Sidebar)
+    // Primary filters — shown prominently; user must select ≥2 groups to see results
+    const primaryFilterConfig = [
+        { key: 'Cash Position',        label: 'Cash Position' },
+        { key: 'Difficulty',           label: 'Difficulty' },
+        { key: 'Time',                 label: 'Time' },
+        { key: 'Risk',                 label: 'Risk' },
+        { key: 'Who controls strategy?', label: 'Who Controls' },
+    ];
+
+    // Sidebar accordion filters
     const filterConfig = [
         {
             group: 'Financial Impact', filters: [
-                { key: 'Profit Direction?', label: 'Profit Direction' },
-                { key: 'Spend Rate', label: 'Spend Rate' },
-                { key: 'Cash Timing', label: 'Cash Timing' },
+                { key: 'Profit?',            label: 'Profit Impact' },
+                { key: 'Cash Spend Timing',  label: 'Cash Spend Timing' },
+                { key: 'Cash Receipt Timing',label: 'Cash Receipt Timing' },
                 { key: 'Short term benefit', label: 'Short Term Benefit' },
-                { key: 'Financial Reports', label: 'Financial Reports' }
+                { key: 'Find in  Reports',   label: 'Financial Reports' }
             ]
         },
         {
-            group: 'Effort & Risk', filters: [
-                { key: 'Category', label: 'Category' },
-                { key: 'Risk', label: 'Risk' },
-                { key: 'How long?', label: 'Duration' },
-                { key: 'Pillar', label: 'Pillar' }
+            group: 'Effort & Context', filters: [
+                { key: 'Key Department', label: 'Department' },
+                { key: 'Category',       label: 'Category' },
+                { key: 'Pillar',         label: 'Pillar' }
             ]
         },
         {
             group: 'Applicability', filters: [
-                { key: 'Solo/Micro', label: 'Solo/Micro' },
-                { key: 'Large Co.', label: 'Large Co.' },
-                { key: 'Non-profit', label: 'Non-profit' },
-                { key: 'Personal', label: 'Personal' },
-                { key: 'Everyone', label: 'Everyone' }
+                { key: 'Solo/Micro',    label: 'Solo/Micro' },
+                { key: 'Large Co.',     label: 'Large Co.' },
+                { key: 'Non-profit',    label: 'Non-profit' },
+                { key: 'Every Company?',label: 'Every Company' }
             ]
         },
         {
             group: 'Operational Context', filters: [
-                { key: 'Decision Control?', label: 'Decision Control' },
-                { key: 'Symptom/Root', label: 'Symptom or Root' },
-                { key: 'Frequency', label: 'Frequency' },
-                { key: 'Use when?', label: 'Use When?' },
-                { key: 'Mentor', label: 'Mentor' },
-                { key: 'Bookkeeping', label: 'Bookkeeping' },
-                { key: 'Free', label: 'Free Tool' }
+                { key: 'Symptom or Root Cause', label: 'Symptom or Root' },
+                { key: 'Frequency',             label: 'Frequency' },
+                { key: 'Mentor',                label: 'Mentor' },
+                { key: 'Find in Bookkeeping?',  label: 'Bookkeeping' }
             ]
         }
     ];
@@ -55,15 +60,263 @@ document.addEventListener('DOMContentLoaded', () => {
     const testDropZone = document.getElementById('test-drop-zone');
     const testFileInput = document.getElementById('test-file-input');
     const filtersContainer = document.getElementById('filters-container');
+    const primaryFiltersGrid = document.getElementById('primary-filters-grid');
+    const primaryActiveCount = document.getElementById('primary-active-count');
     const strategiesTableContainer = document.getElementById('strategies-table-container');
     const strategiesTbody = document.getElementById('strategies-tbody');
     const totalResults = document.getElementById('total-results');
     const searchInput = document.getElementById('search-input');
-    const reqDeptSelect = document.getElementById('req-dept-select');
-    const reqDiffSelect = document.getElementById('req-diff-select');
     const noResultsState = document.getElementById('no-results-state');
+    const sidebarActiveCount = document.getElementById('sidebar-active-count');
     const resetFiltersBtn = document.getElementById('reset-filters');
+    const resetPrimaryFiltersBtn = document.getElementById('reset-primary-filters');
     const emptyState = document.getElementById('empty-state');
+    const sidebarToggleBtn = document.getElementById('sidebar-toggle');
+    const sidebarToggleBadge = document.getElementById('sidebar-toggle-badge');
+    const sidebarOverlay = document.getElementById('sidebar-overlay');
+    const sidebarCloseBtn = document.getElementById('sidebar-close');
+
+    // ── Mobile DOM refs ──────────────────────────────────────────────────
+    const mobileSearchToggle  = document.getElementById('mobile-search-toggle');
+    const mobileSearchBar     = document.getElementById('mobile-search-bar');
+    const mobileSearchInput   = document.getElementById('mobile-search-input');
+    const mobileSearchClose   = document.getElementById('mobile-search-close');
+    const mobileResultsText   = document.getElementById('mobile-results-text');
+    const secondaryFilterBtn  = document.getElementById('secondary-filter-btn');
+    const secondaryFilterCount= document.getElementById('secondary-filter-count');
+    const primaryFilterDrawer = document.getElementById('primary-filter-drawer');
+    const pfdHandleArea       = document.getElementById('pfd-handle-area');
+    const pfdSections         = document.getElementById('pfd-sections');
+    const pfdActiveCount      = document.getElementById('pfd-active-count');
+    const pfdResetBtn         = document.getElementById('pfd-reset-btn');
+
+    // ── Sidebar drawer (tablet + phone secondary filters) ────────────────
+    function openSidebar() {
+        document.body.classList.add('sidebar-open');
+        document.body.style.overflow = 'hidden';
+        sidebarToggleBtn.setAttribute('aria-expanded', 'true');
+    }
+    function closeSidebar() {
+        document.body.classList.remove('sidebar-open');
+        document.body.style.overflow = '';
+        sidebarToggleBtn.setAttribute('aria-expanded', 'false');
+    }
+    sidebarToggleBtn.setAttribute('aria-expanded', 'false');
+    sidebarToggleBtn.setAttribute('aria-controls', 'sidebar');
+    sidebarToggleBtn.addEventListener('click', () => {
+        document.body.classList.contains('sidebar-open') ? closeSidebar() : openSidebar();
+    });
+    sidebarOverlay.addEventListener('click', closeSidebar);
+    sidebarCloseBtn.addEventListener('click', closeSidebar);
+
+    // On phone the secondary filter button also opens the sidebar
+    secondaryFilterBtn.addEventListener('click', () => {
+        document.body.classList.contains('sidebar-open') ? closeSidebar() : openSidebar();
+    });
+
+    document.addEventListener('keydown', e => {
+        if (e.key === 'Escape') {
+            if (document.body.classList.contains('sidebar-open')) closeSidebar();
+            else if (document.body.classList.contains('search-open')) closeSearch();
+        }
+    });
+
+    const mq = window.matchMedia('(min-width: 1024px)');
+    mq.addEventListener('change', e => { if (e.matches) { closeSidebar(); closeSearch(); } });
+    window.matchMedia('(min-width: 768px)').addEventListener('change', e => {
+        if (e.matches) closeSearch();
+    });
+
+    // ── Mobile search (expands under header) ─────────────────────────────
+    function openSearch() {
+        document.body.classList.add('search-open');
+        mobileSearchBar.classList.add('open');
+        mobileSearchToggle.classList.add('active');
+        mobileSearchToggle.setAttribute('aria-expanded', 'true');
+        mobileSearchBar.setAttribute('aria-hidden', 'false');
+        mobileSearchInput.focus();
+    }
+    function closeSearch() {
+        document.body.classList.remove('search-open');
+        mobileSearchBar.classList.remove('open');
+        mobileSearchToggle.classList.remove('active');
+        mobileSearchToggle.setAttribute('aria-expanded', 'false');
+        mobileSearchBar.setAttribute('aria-hidden', 'true');
+        mobileSearchInput.value = '';
+        searchInput.value = '';
+        activeSearch = '';
+        applyFilters();
+    }
+
+    // Clear search bar when a bottom-drawer filter is selected
+    function clearSearchForFilters() {
+        if (!activeSearch && !document.body.classList.contains('search-open')) return;
+        document.body.classList.remove('search-open');
+        mobileSearchBar.classList.remove('open');
+        mobileSearchToggle.classList.remove('active');
+        mobileSearchToggle.setAttribute('aria-expanded', 'false');
+        mobileSearchBar.setAttribute('aria-hidden', 'true');
+        mobileSearchInput.value = '';
+        searchInput.value = '';
+        activeSearch = '';
+    }
+
+    // Clear all filters when search activates (≥5 chars)
+    function clearFiltersForSearch() {
+        Object.keys(activePrimaryFilters).forEach(key => activePrimaryFilters[key].clear());
+        Object.keys(activeFilters).forEach(key => activeFilters[key].clear());
+        rebuildPrimaryOptions(0);
+        updatePrimaryActiveCount();
+        buildFilters();
+        buildPrimaryDrawer();
+    }
+
+    mobileSearchToggle.addEventListener('click', () => {
+        document.body.classList.contains('search-open') ? closeSearch() : openSearch();
+    });
+    mobileSearchClose.addEventListener('click', closeSearch);
+    mobileSearchInput.addEventListener('input', e => {
+        const val = e.target.value;
+        const newSearch = val.length >= 5 ? val.toLowerCase() : '';
+        if (newSearch && newSearch !== activeSearch) clearFiltersForSearch();
+        activeSearch = newSearch;
+        searchInput.value = val;
+        applyFilters();
+    });
+
+    // ── Primary filter drawer (bottom, phone) ────────────────────────────
+    pfdHandleArea.addEventListener('click', () => {
+        primaryFilterDrawer.classList.toggle('open');
+    });
+
+    pfdResetBtn.addEventListener('click', e => {
+        e.stopPropagation(); // don't toggle drawer
+        Object.keys(activePrimaryFilters).forEach(key => activePrimaryFilters[key].clear());
+        rebuildPrimaryOptions(0);
+        updatePrimaryActiveCount();
+        buildFilters();
+        applyFilters();
+        buildPrimaryDrawer();
+    });
+
+    function buildPrimaryDrawer() {
+        pfdSections.innerHTML = '';
+
+        primaryFilterConfig.forEach((conf, i) => {
+            // Scoped: strategies passing all active selections left of i
+            const scoped = strategies.filter(s => {
+                for (let j = 0; j < i; j++) {
+                    const f = primaryFilterConfig[j];
+                    if (activePrimaryFilters[f.key]?.size > 0) {
+                        const v = s[f.key] != null ? String(s[f.key]).trim() : '';
+                        if (!activePrimaryFilters[f.key].has(v)) return false;
+                    }
+                }
+                return true;
+            });
+
+            // Counts from scoped data
+            const valuesMap = {};
+            scoped.forEach(s => {
+                const v = s[conf.key] != null ? String(s[conf.key]).trim() : '';
+                if (v) valuesMap[v] = (valuesMap[v] || 0) + 1;
+            });
+
+            // All possible values from the full dataset
+            const allValues = new Set();
+            strategies.forEach(s => {
+                const v = s[conf.key] != null ? String(s[conf.key]).trim() : '';
+                if (v) allValues.add(v);
+            });
+
+            // Skip filter group only if the column has no values at all in the dataset
+            if (allValues.size === 0) return;
+
+            const currentVal = activePrimaryFilters[conf.key]?.size > 0
+                ? [...activePrimaryFilters[conf.key]][0] : null;
+
+            const section = document.createElement('div');
+            section.className = 'pfd-section';
+
+            const header = document.createElement('div');
+            header.className = 'pfd-section-header';
+            header.innerHTML = `
+                <span class="pfd-section-label">${conf.label}</span>
+                ${currentVal ? `<span class="pfd-section-value">${currentVal}</span>` : ''}
+                <i class="fa-solid fa-chevron-down pfd-section-chevron"></i>
+            `;
+            header.addEventListener('click', () => {
+                const wasExpanded = section.classList.contains('expanded');
+                pfdSections.querySelectorAll('.pfd-section.expanded').forEach(s => s.classList.remove('expanded'));
+                if (!wasExpanded) section.classList.add('expanded');
+            });
+
+            const optionsDiv = document.createElement('div');
+            optionsDiv.className = 'pfd-options';
+            const radioName = 'pfd_' + conf.key.replace(/\W/g, '_');
+
+            [...allValues].sort().forEach(val => {
+                const count = valuesMap[val] || 0;
+                const lbl = document.createElement('label');
+                lbl.className = 'pfd-option' + (count === 0 ? ' pfd-option-zero' : '');
+
+                const radio = document.createElement('input');
+                radio.type = 'radio';
+                radio.name = radioName;
+                radio.value = val;
+                radio.disabled = count === 0;
+                if (activePrimaryFilters[conf.key]?.has(val)) radio.checked = true;
+
+                radio.addEventListener('click', () => {
+                    clearSearchForFilters();
+                    const wasSelected = activePrimaryFilters[conf.key].has(val);
+                    activePrimaryFilters[conf.key].clear();
+                    if (wasSelected) radio.checked = false;
+                    else activePrimaryFilters[conf.key].add(val);
+                    rebuildPrimaryOptions(i + 1);
+                    updatePrimaryActiveCount();
+                    buildFilters();
+                    applyFilters();
+                    buildPrimaryDrawer();
+                });
+
+                const labelSpan = document.createElement('span');
+                labelSpan.className = 'pfd-option-label';
+                labelSpan.textContent = val;
+
+                const countSpan = document.createElement('span');
+                countSpan.className = 'pfd-option-count' + (count === 0 ? ' pfd-option-count-zero' : '');
+                countSpan.textContent = count;
+
+                lbl.appendChild(radio);
+                lbl.appendChild(labelSpan);
+                lbl.appendChild(countSpan);
+                optionsDiv.appendChild(lbl);
+            });
+
+            section.appendChild(header);
+            section.appendChild(optionsDiv);
+            pfdSections.appendChild(section);
+        });
+
+        updatePrimaryDrawerCount();
+    }
+
+    function updatePrimaryDrawerCount() {
+        const count = primaryFilterConfig.filter(f => activePrimaryFilters[f.key]?.size > 0).length;
+        pfdActiveCount.textContent = count;
+        pfdActiveCount.classList.toggle('hidden', count === 0);
+        pfdResetBtn.classList.toggle('hidden', count === 0);
+    }
+
+    function updateSecondaryFilterButton() {
+        const primaryCount = primaryFilterConfig.filter(f => activePrimaryFilters[f.key]?.size > 0).length;
+        const sidebarCount = Object.values(activeFilters).filter(s => s.size > 0).length;
+        // Show when primary filters are active OR search is active (search can use sidebar too)
+        secondaryFilterBtn.classList.toggle('hidden', primaryCount === 0 && !activeSearch);
+        secondaryFilterCount.textContent = sidebarCount;
+        secondaryFilterCount.classList.toggle('hidden', sidebarCount === 0);
+    }
 
     // Sort State
     let currentSortColumn = null;
@@ -140,67 +393,165 @@ document.addEventListener('DOMContentLoaded', () => {
         testPanel.classList.add('hidden');
         appContainer.classList.remove('hidden');
 
-        buildRequiredFilters();
+        buildPrimaryFilters();
         buildFilters();
         applyFilters();
+        buildPrimaryDrawer(); // phone bottom drawer
+        updateSecondaryFilterButton();
     }
 
-    function buildRequiredFilters() {
-        const depts = {};
+    // Close primary filter dropdowns when clicking outside
+    document.addEventListener('click', e => {
+        if (!e.target.closest('.pf-group')) {
+            document.querySelectorAll('.pf-group.open').forEach(g => g.classList.remove('open'));
+        }
+    });
 
-        strategies.forEach(s => {
-            if (s['Key Department']) {
-                const dept = String(s['Key Department']).trim();
-                depts[dept] = (depts[dept] || 0) + 1;
+    function buildPrimaryFilters() {
+        primaryFiltersGrid.innerHTML = '';
+        activePrimaryFilters = {};
+
+        // First pass: create the shell (trigger + empty dropdown) for each group
+        primaryFilterConfig.forEach((conf, i) => {
+            activePrimaryFilters[conf.key] = new Set();
+
+            const groupDiv = document.createElement('div');
+            groupDiv.className = 'pf-group';
+            groupDiv.dataset.key = conf.key;
+            groupDiv.dataset.index = i;
+
+            const trigger = document.createElement('button');
+            trigger.className = 'pf-trigger';
+            trigger.innerHTML = `<span class="pf-label">${conf.label}</span><span class="pf-badge hidden">0</span><i class="fa-solid fa-chevron-down pf-chevron"></i>`;
+            trigger.addEventListener('click', e => {
+                e.stopPropagation();
+                const isOpen = groupDiv.classList.contains('open');
+                document.querySelectorAll('.pf-group.open').forEach(g => g.classList.remove('open'));
+                if (!isOpen) groupDiv.classList.add('open');
+            });
+
+            const dropdown = document.createElement('div');
+            dropdown.className = 'pf-dropdown';
+
+            groupDiv.appendChild(trigger);
+            groupDiv.appendChild(dropdown);
+            primaryFiltersGrid.appendChild(groupDiv);
+        });
+
+        // Second pass: populate options with cascading counts from the start
+        rebuildPrimaryOptions(0);
+    }
+
+    // Rebuild option counts for all filters at fromIndex and to the right.
+    // Each filter's counts reflect only strategies that match all active
+    // selections in filters to its left (left-to-right cascade).
+    // All values from the full dataset are shown; zero-count options are disabled.
+    function rebuildPrimaryOptions(fromIndex) {
+        primaryFilterConfig.forEach((conf, i) => {
+            if (i < fromIndex) return;
+
+            // Scoped: strategies passing all active selections left of i
+            const scoped = strategies.filter(s => {
+                for (let j = 0; j < i; j++) {
+                    const f = primaryFilterConfig[j];
+                    if (activePrimaryFilters[f.key]?.size > 0) {
+                        const v = s[f.key] != null ? String(s[f.key]).trim() : '';
+                        if (!activePrimaryFilters[f.key].has(v)) return false;
+                    }
+                }
+                return true;
+            });
+
+            // Counts from scoped data
+            const valuesMap = {};
+            scoped.forEach(s => {
+                const v = s[conf.key] != null ? String(s[conf.key]).trim() : '';
+                if (v) valuesMap[v] = (valuesMap[v] || 0) + 1;
+            });
+
+            // All possible values from the full dataset
+            const allValues = new Set();
+            strategies.forEach(s => {
+                const v = s[conf.key] != null ? String(s[conf.key]).trim() : '';
+                if (v) allValues.add(v);
+            });
+
+            const groupDiv = primaryFiltersGrid.querySelector(`.pf-group[data-key="${CSS.escape(conf.key)}"]`);
+            if (!groupDiv) return;
+
+            // Auto-clear selection if its count dropped to zero
+            if (activePrimaryFilters[conf.key]?.size > 0) {
+                const current = [...activePrimaryFilters[conf.key]][0];
+                if (!valuesMap[current]) {
+                    activePrimaryFilters[conf.key].clear();
+                    groupDiv.classList.remove('has-selection');
+                    const checked = groupDiv.querySelector('input[type="radio"]:checked');
+                    if (checked) checked.checked = false;
+                }
             }
-        });
 
-        // Clear existing options and add a default "Select" option
-        reqDeptSelect.innerHTML = '';
-        reqDeptSelect.add(new Option('Select Department', ''));
-        Object.keys(depts).sort().forEach(d => {
-            if (d) reqDeptSelect.add(new Option(`${d} (${depts[d]})`, d));
-        });
+            const dropdown = groupDiv.querySelector('.pf-dropdown');
+            dropdown.innerHTML = '';
 
-        // Initialize Difficulty options
-        updateDifficultyOptions();
+            const radioName = 'pf_' + conf.key.replace(/\W/g, '_');
+            [...allValues].sort().forEach(val => {
+                const count = valuesMap[val] || 0;
+                const label = document.createElement('label');
+                label.className = 'filter-radio' + (count === 0 ? ' filter-radio-zero' : '');
 
-        reqDeptSelect.addEventListener('change', () => {
-            updateDifficultyOptions();
-            buildFilters();
-            applyFilters();
-        });
-        reqDiffSelect.addEventListener('change', () => {
-            buildFilters();
-            applyFilters();
+                const cb = document.createElement('input');
+                cb.type = 'radio';
+                cb.name = radioName;
+                cb.value = val;
+                cb.disabled = count === 0;
+                if (activePrimaryFilters[conf.key]?.has(val)) cb.checked = true;
+
+                cb.addEventListener('click', () => {
+                    const wasSelected = activePrimaryFilters[conf.key].has(val);
+                    activePrimaryFilters[conf.key].clear();
+                    if (wasSelected) {
+                        cb.checked = false;
+                    } else {
+                        activePrimaryFilters[conf.key].add(val);
+                    }
+                    // Cascade: rebuild counts for all filters to the right
+                    rebuildPrimaryOptions(i + 1);
+                    updatePrimaryActiveCount();
+                    buildFilters();
+                    applyFilters();
+                });
+
+                label.appendChild(cb);
+                label.appendChild(document.createTextNode(val));
+
+                const badge = document.createElement('span');
+                badge.className = 'filter-count' + (count === 0 ? ' filter-count-zero' : '');
+                badge.textContent = count;
+                label.appendChild(badge);
+
+                dropdown.appendChild(label);
+            });
         });
     }
 
-    function updateDifficultyOptions() {
-        const diffs = {};
-        const reqDept = reqDeptSelect.value;
-        const currentDiff = reqDiffSelect.value;
+    function updatePrimaryActiveCount() {
+        const count = primaryFilterConfig.filter(f => activePrimaryFilters[f.key]?.size > 0).length;
+        primaryActiveCount.textContent = `${count} of ${primaryFilterConfig.length} active`;
+        primaryActiveCount.className = 'primary-active-badge' + (count >= 2 ? ' ready' : '');
 
-        strategies.forEach(s => {
-            const rowDept = s['Key Department'] !== undefined && s['Key Department'] !== null ? String(s['Key Department']).trim() : '';
-            if (reqDept && rowDept !== reqDept) return; // Only count difficulties for the currently selected department
-
-            if (s['Difficulty']) {
-                const diff = String(s['Difficulty']).trim();
-                diffs[diff] = (diffs[diff] || 0) + 1;
+        primaryFilterConfig.forEach(f => {
+            const groupDiv = primaryFiltersGrid.querySelector(`.pf-group[data-key="${CSS.escape(f.key)}"]`);
+            if (!groupDiv) return;
+            const selCount = activePrimaryFilters[f.key]?.size || 0;
+            groupDiv.classList.toggle('has-selection', selCount > 0);
+            const badge = groupDiv.querySelector('.pf-badge');
+            if (badge) {
+                badge.textContent = selCount;
+                badge.classList.toggle('hidden', selCount === 0);
             }
         });
-
-        reqDiffSelect.innerHTML = '';
-        reqDiffSelect.add(new Option('Select Difficulty', ''));
-        Object.keys(diffs).sort().forEach(c => {
-            if (c) {
-                const opt = new Option(`${c} (${diffs[c]})`, c);
-                // Keep the selection if it's still available
-                if (c === currentDiff) opt.selected = true;
-                reqDiffSelect.add(opt);
-            }
-        });
+        updatePrimaryDrawerCount();
+        updateSecondaryFilterButton();
     }
 
     // Build Filters UI - scoped to the currently selected Dept + Difficulty
@@ -216,18 +567,13 @@ document.addEventListener('DOMContentLoaded', () => {
         filtersContainer.innerHTML = '';
         activeFilters = {};
 
-        const reqDept = reqDeptSelect.value;
-        const reqDiff = reqDiffSelect.value;
-
-        // Compute a scoped subset of strategies based on the required filters
+        // Scope sidebar counts to strategies matching current primary filter selections
         const scopedStrategies = strategies.filter(s => {
-            if (reqDept) {
-                const d = s['Key Department'] !== undefined && s['Key Department'] !== null ? String(s['Key Department']).trim() : '';
-                if (d !== reqDept) return false;
-            }
-            if (reqDiff) {
-                const df = s['Difficulty'] !== undefined && s['Difficulty'] !== null ? String(s['Difficulty']).trim() : '';
-                if (df !== reqDiff) return false;
+            for (const f of primaryFilterConfig) {
+                if (activePrimaryFilters[f.key]?.size > 0) {
+                    const val = s[f.key] != null ? String(s[f.key]).trim() : '';
+                    if (!activePrimaryFilters[f.key].has(val)) return false;
+                }
             }
             return true;
         });
@@ -283,18 +629,28 @@ document.addEventListener('DOMContentLoaded', () => {
                 const optionsDiv = document.createElement('div');
                 optionsDiv.className = 'filter-options';
 
+                const radioName = 'sf_' + conf.key.replace(/\W/g, '_');
                 uniqueValues.forEach(val => {
                     const label = document.createElement('label');
-                    label.className = 'filter-checkbox';
+                    label.className = 'filter-radio';
 
                     const checkbox = document.createElement('input');
-                    checkbox.type = 'checkbox';
+                    checkbox.type = 'radio';
+                    checkbox.name = radioName;
                     checkbox.value = val;
-                    // Restore previously checked state
                     if (activeFilters[conf.key].has(val)) {
                         checkbox.checked = true;
                     }
-                    checkbox.addEventListener('change', (e) => handleFilterChange(conf.key, val, e.target.checked));
+                    checkbox.addEventListener('click', () => {
+                        const wasSelected = activeFilters[conf.key].has(val);
+                        activeFilters[conf.key].clear();
+                        if (wasSelected) {
+                            checkbox.checked = false;
+                        } else {
+                            activeFilters[conf.key].add(val);
+                        }
+                        applyFilters();
+                    });
 
                     label.appendChild(checkbox);
                     label.appendChild(document.createTextNode(val));
@@ -316,73 +672,73 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    function handleFilterChange(key, value, isChecked) {
-        if (isChecked) {
-            activeFilters[key].add(value);
-        } else {
-            activeFilters[key].delete(value);
-        }
-        applyFilters();
-    }
-
     searchInput.addEventListener('input', (e) => {
-        activeSearch = e.target.value.toLowerCase();
+        const val = e.target.value;
+        const newSearch = val.length >= 5 ? val.toLowerCase() : '';
+        if (newSearch && newSearch !== activeSearch) clearFiltersForSearch();
+        activeSearch = newSearch;
+        applyFilters();
+    });
+
+    resetPrimaryFiltersBtn.addEventListener('click', () => {
+        document.querySelectorAll('.pf-group input[type="radio"]').forEach(cb => cb.checked = false);
+        Object.keys(activePrimaryFilters).forEach(key => activePrimaryFilters[key].clear());
+        rebuildPrimaryOptions(0);
+        updatePrimaryActiveCount();
+        buildFilters();
         applyFilters();
     });
 
     resetFiltersBtn.addEventListener('click', () => {
         activeSearch = '';
         searchInput.value = '';
-        document.querySelectorAll('.filter-checkbox input').forEach(cb => cb.checked = false);
+        document.querySelectorAll('.filter-radio input[type="radio"]').forEach(cb => cb.checked = false);
         Object.keys(activeFilters).forEach(key => activeFilters[key].clear());
-        reqDeptSelect.value = ''; // Reset required filters
-        reqDiffSelect.value = ''; // Reset required filters
         currentSortColumn = null;
         currentSortDirection = 'asc';
         updateSortIcons();
-        buildFilters();
+        updateSidebarActiveCount();
         applyFilters();
     });
 
     function applyFilters() {
-        const reqDept = reqDeptSelect.value;
-        const reqDiff = reqDiffSelect.value;
+        const activePrimaryGroupCount = primaryFilterConfig.filter(f => activePrimaryFilters[f.key]?.size > 0).length;
 
-        if (!activeSearch && (!reqDept || !reqDiff)) {
+        if (!activeSearch && activePrimaryGroupCount < 2) {
             filteredStrategies = [];
             strategiesTbody.innerHTML = '';
             totalResults.textContent = '0';
+            mobileResultsText.textContent = activePrimaryGroupCount === 1
+                ? 'Select one more filter to see results'
+                : 'Select filters below to get started';
             strategiesTableContainer.classList.add('hidden');
+            document.getElementById('card-list-container').classList.add('hidden');
             noResultsState.classList.add('hidden');
-            emptyState.classList.remove('hidden'); // Show empty state if required filters not set and no search
+            emptyState.classList.remove('hidden');
+            updateSecondaryFilterButton();
             return;
         }
 
         filteredStrategies = strategies.filter(s => {
-            // Check Search First - if there's a match, bypass required filters
-            let searchMatch = false;
+            // Search (≥5 chars) bypasses primary filter requirement but sidebar filters still apply
             if (activeSearch) {
                 const searchString = JSON.stringify(Object.values(s)).toLowerCase();
                 if (!searchString.includes(activeSearch)) return false;
-                searchMatch = true;
+            } else {
+                // Enforce primary filters (AND between groups, OR within a group)
+                for (const f of primaryFilterConfig) {
+                    if (activePrimaryFilters[f.key]?.size > 0) {
+                        const rowVal = s[f.key] != null ? String(s[f.key]).trim() : '';
+                        if (!activePrimaryFilters[f.key].has(rowVal)) return false;
+                    }
+                }
             }
 
-            // If not relying purely on search, enforce required filters
-            if (!searchMatch) {
-                const sDept = s['Key Department'] !== undefined && s['Key Department'] !== null ? String(s['Key Department']).trim() : '';
-                if (sDept !== reqDept) return false;
-
-                const sDiff = s['Difficulty'] !== undefined && s['Difficulty'] !== null ? String(s['Difficulty']).trim() : '';
-                if (sDiff !== reqDiff) return false;
-            }
-
-            // Check Checkbox Filters
+            // Sidebar filters always apply
             for (const key of Object.keys(activeFilters)) {
                 if (activeFilters[key].size > 0) {
-                    const rowVal = s[key] !== undefined && s[key] !== null ? String(s[key]).trim() : '';
-                    if (!activeFilters[key].has(rowVal)) {
-                        return false;
-                    }
+                    const rowVal = s[key] != null ? String(s[key]).trim() : '';
+                    if (!activeFilters[key].has(rowVal)) return false;
                 }
             }
             return true;
@@ -391,18 +747,39 @@ document.addEventListener('DOMContentLoaded', () => {
         sortStrategies();
         renderStrategies();
         renderSummary();
+        updateSidebarActiveCount();
+    }
+
+    function updateSidebarActiveCount() {
+        const sidebarCount = Object.values(activeFilters).filter(s => s.size > 0).length;
+        sidebarActiveCount.textContent = sidebarCount;
+        sidebarActiveCount.classList.toggle('hidden', sidebarCount === 0);
+        sidebarToggleBadge.textContent = sidebarCount;
+        sidebarToggleBadge.classList.toggle('hidden', sidebarCount === 0);
+        updateSecondaryFilterButton();
     }
 
     function renderSummary() {
-        totalResults.textContent = filteredStrategies.length;
-        emptyState.classList.add('hidden'); // We know required are set if we reach here
+        const n = filteredStrategies.length;
+        totalResults.textContent = n;
+        mobileResultsText.textContent = n === 1 ? '1 strategy found' : `${n} strategies found`;
+        emptyState.classList.add('hidden');
 
-        if (filteredStrategies.length === 0) {
+        const cardContainer = document.getElementById('card-list-container');
+
+        if (n === 0) {
             strategiesTableContainer.classList.add('hidden');
+            cardContainer.classList.add('hidden');
             noResultsState.classList.remove('hidden');
         } else {
-            strategiesTableContainer.classList.remove('hidden');
             noResultsState.classList.add('hidden');
+            if (mqPhone.matches) {
+                cardContainer.classList.remove('hidden');
+                strategiesTableContainer.classList.add('hidden');
+            } else {
+                strategiesTableContainer.classList.remove('hidden');
+                cardContainer.classList.add('hidden');
+            }
         }
     }
 
@@ -467,51 +844,147 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
+    // ── M3: Card list for phone ───────────────────────────────────────────
+    const mqPhone = window.matchMedia('(max-width: 767px)');
+
     function renderStrategies() {
+        if (mqPhone.matches) { renderCards(); return; }
+        renderTable();
+    }
+
+    function renderCards() {
+        const container = document.getElementById('card-list-container');
+        container.innerHTML = '';
+        container.classList.remove('hidden');
+        document.getElementById('strategies-table-container').classList.add('hidden');
+
+        const list = document.createElement('div');
+        list.className = 'card-list';
+
+        // All 5 primary fields as chip candidates
+        const chipDefs = [
+            { key: 'Cash Position',          label: 'Cash',    cls: v => v.toLowerCase().includes('short') ? 'badge-red' : v.toLowerCase().includes('always') ? 'badge-green' : 'badge-blue' },
+            { key: 'Difficulty',             label: 'Effort',  cls: v => v.includes('Easy') ? 'badge-green' : (v.includes('Hard') ? 'badge-red' : 'badge-gray') },
+            { key: 'Risk',                   label: 'Risk',    cls: v => v.includes('High') ? 'badge-red' : (v.includes('Low') ? 'badge-green' : 'badge-gray') },
+            { key: 'Time',                   label: 'Time',    cls: () => 'badge-gray' },
+            { key: 'Who controls strategy?', label: 'Control', cls: () => 'badge-gray' },
+        ];
+
+        filteredStrategies.forEach(s => {
+            const card = document.createElement('div');
+            card.className = 'strategy-card';
+
+            const name = String(s['Strategy'] || '—');
+            const dept = String(s['Key Department'] || '');
+
+            // Show 3 chips: skip fields that are already active (user knows the value)
+            const chips = chipDefs
+                .filter(f => !(activePrimaryFilters[f.key] && activePrimaryFilters[f.key].size > 0))
+                .slice(0, 3)
+                .map(f => {
+                    const val = String(s[f.key] || '');
+                    if (!val) return '';
+                    return `<span class="status-badge ${f.cls(val)}">${f.label}: ${val}</span>`;
+                })
+                .join('');
+
+            card.innerHTML = `
+                <div class="sc-name">${name}</div>
+                ${dept ? `<div class="sc-dept">${dept}</div>` : ''}
+                <div class="sc-chips">${chips}</div>
+                <div class="sc-expand-toggle">
+                    <span class="sc-expand-label">More details</span>
+                    <i class="fa-solid fa-chevron-down sc-chevron"></i>
+                </div>
+                <div class="sc-details hidden">
+                    ${buildCardDetails(s)}
+                </div>
+            `;
+
+            card.querySelector('.sc-expand-toggle').addEventListener('click', () => {
+                const details = card.querySelector('.sc-details');
+                const chevron = card.querySelector('.sc-chevron');
+                const label   = card.querySelector('.sc-expand-label');
+                const open = details.classList.toggle('hidden');
+                chevron.classList.toggle('fa-chevron-down',  open);
+                chevron.classList.toggle('fa-chevron-up',   !open);
+                label.textContent = open ? 'More details' : 'Less';
+            });
+
+            list.appendChild(card);
+        });
+
+        container.appendChild(list);
+    }
+
+    function buildCardDetails(s) {
+        const fields = [
+            ['Profit',            s['Profit?']],
+            ['Cash Spend',        s['Cash Spend Timing']],
+            ['Cash Receipt',      s['Cash Receipt Timing']],
+            ['Symptom/Root',      s['Symptom or Root Cause']],
+            ['Pillar',            s['Pillar']],
+            ['Frequency',         s['Frequency']],
+            ['Short Term Benefit',s['Short term benefit']],
+            ['Bookkeeping',       s['Find in Bookkeeping?']],
+            ['Reports',           s['Find in  Reports']],
+            ['Mentor',            s['Mentor']],
+        ];
+        return fields
+            .filter(([, v]) => v !== undefined && String(v).trim() !== '')
+            .map(([k, v]) => `
+                <div class="sc-detail-row">
+                    <span class="sc-detail-label">${k}</span>
+                    <span class="sc-detail-value">${v}</span>
+                </div>`)
+            .join('');
+    }
+
+    function renderTable() {
+        document.getElementById('card-list-container').classList.add('hidden');
         strategiesTbody.innerHTML = '';
 
         filteredStrategies.forEach(s => {
             const tr = document.createElement('tr');
 
-            const strategyStr = String(s['Strategy'] || '-');
-            const num = s['#'] || '-';
-            const decisionControl = String(s['Decision Control?'] || '-');
-            const duration = s['How long?'] || '-';
-            const prof = String(s['Profit Direction?'] || '-');
-            const spend = String(s['Spend Rate'] || '-');
-            const timing = String(s['Cash Timing'] || '-');
-            const mentor = String(s['Mentor'] || '-');
-            const sxRoot = String(s['Symptom/Root'] || '-');
-            const pillar = String(s['Pillar'] || '-');
-            const frequency = String(s['Frequency'] || '-');
-            const shortTerm = String(s['Short term benefit'] || '-');
-            const useWhen = String(s['Use when?'] || '-');
-            const books = String(s['Bookkeeping'] || '-');
-            const reports = String(s['Financial Reports'] || '-');
-            const risk = String(s['Risk'] || '-');
+            const num           = s['#'] || '-';
+            const strategyStr   = String(s['Strategy'] || '-');
+            const cashPos       = String(s['Cash Position'] || '-');
+            const whoControls   = String(s['Who controls strategy?'] || '-');
+            const duration      = String(s['Time'] || '-');
+            const prof          = String(s['Profit?'] || '-');
+            const spendTiming   = String(s['Cash Spend Timing'] || '-');
+            const receiptTiming = String(s['Cash Receipt Timing'] || '-');
+            const mentor        = String(s['Mentor'] || '-');
+            const sxRoot        = String(s['Symptom or Root Cause'] || '-');
+            const pillar        = String(s['Pillar'] || '-');
+            const frequency     = String(s['Frequency'] || '-');
+            const shortTerm     = String(s['Short term benefit'] || '-');
+            const books         = String(s['Find in Bookkeeping?'] || '-');
+            const reports       = String(s['Find in  Reports'] || '-');
+            const risk          = String(s['Risk'] || '-');
 
-            // Generate badge classes
-            const riskClass = risk.includes('High') ? 'badge-red' : (risk.includes('Low') ? 'badge-green' : 'badge-gray');
-            const timingClass = timing.includes('Sooner') ? 'badge-blue' : 'badge-gray';
-            const profClass = prof.includes('Increase') ? 'badge-green' : 'badge-gray';
+            const riskClass    = risk.includes('High') ? 'badge-red' : (risk.includes('Low') ? 'badge-green' : 'badge-gray');
+            const cashPosClass = cashPos.toLowerCase().includes('short') ? 'badge-red' : (cashPos.toLowerCase().includes('always') ? 'badge-green' : 'badge-blue');
+            const profClass    = prof.toLowerCase().includes('increase') ? 'badge-green' : (prof.toLowerCase().includes('decrease') ? 'badge-red' : 'badge-gray');
 
             tr.innerHTML = `
-                <td class="sticky-col width-narrow text-muted"><strong>${num}</strong></td>
-                <td class="sticky-col sticky-col-2 width-wide strategy-title-cell">${strategyStr}</td>
-                <td>${decisionControl}</td>
-                <td>${duration}</td>
-                <td><span class="status-badge ${profClass}">${prof}</span></td>
-                <td>${spend}</td>
-                <td><span class="status-badge ${timingClass}">${timing}</span></td>
-                <td>${mentor}</td>
-                <td>${sxRoot}</td>
-                <td>${pillar}</td>
-                <td>${frequency}</td>
-                <td>${shortTerm}</td>
-                <td>${useWhen}</td>
-                <td>${books}</td>
-                <td>${reports}</td>
-                <td><span class="status-badge ${riskClass}">${risk}</span></td>
+                <td class="sticky-col width-narrow text-muted" data-label="#">${num}</td>
+                <td class="sticky-col sticky-col-2 width-wide strategy-title-cell" data-label="Strategy">${strategyStr}</td>
+                <td data-label="Cash Position"><span class="status-badge ${cashPosClass}">${cashPos}</span></td>
+                <td data-label="Who Controls">${whoControls}</td>
+                <td data-label="Time">${duration}</td>
+                <td data-label="Profit"><span class="status-badge ${profClass}">${prof}</span></td>
+                <td data-label="Cash Spend Timing">${spendTiming}</td>
+                <td data-label="Cash Receipt Timing">${receiptTiming}</td>
+                <td data-label="Risk"><span class="status-badge ${riskClass}">${risk}</span></td>
+                <td data-label="Mentor">${mentor}</td>
+                <td data-label="Symptom/Root">${sxRoot}</td>
+                <td data-label="Pillar">${pillar}</td>
+                <td data-label="Frequency">${frequency}</td>
+                <td data-label="Short Term">${shortTerm}</td>
+                <td data-label="Bookkeeping">${books}</td>
+                <td data-label="Reports">${reports}</td>
             `;
             strategiesTbody.appendChild(tr);
         });
