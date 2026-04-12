@@ -47,7 +47,7 @@
                 <img src="cash_is_clear_logo.jpeg" alt="Cash is Clear Logo" class="header-logo-img">
                 <div>
                     <h1>Cash is Clear&#174; Maximizer</h1>
-                    <p>Opportunities to Optimize Cash Flow &amp; Profit</p>
+                    <p>The cash flow and profit diagnostic tool.</p>
                 </div>
             </div>
 
@@ -59,8 +59,12 @@
 
             <div class="header-stats">
                 <div class="stat-box">
+                    <span id="total-available" class="stat-number">0</span>
+                    <span class="stat-label">Strategies Available</span>
+                </div>
+                <div class="stat-box">
                     <span id="total-results" class="stat-number">0</span>
-                    <span class="stat-label">Strategies Found</span>
+                    <span class="stat-label">Strategies Identified</span>
                 </div>
                 <button id="dev-upload-btn" class="btn dev-upload-btn" title="Upload a new data.json">
                     <i class="fa-solid fa-upload"></i> Upload Data
@@ -120,7 +124,7 @@
                 <div id="primary-filters-container" class="primary-filters">
                     <span class="primary-filters-label">Filters:</span>
                     <div class="primary-filters-grid" id="primary-filters-grid"></div>
-                    <span id="primary-active-count" class="primary-active-badge">0 active</span>
+                    <span id="primary-active-count" class="primary-active-badge">0 active filters</span>
                     <button id="reset-primary-filters" class="btn btn-text btn-text-sm">
                         <i class="fa-solid fa-rotate-right"></i> Clear
                     </button>

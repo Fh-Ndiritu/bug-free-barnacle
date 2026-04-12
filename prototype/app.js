@@ -18,23 +18,18 @@ document.addEventListener('DOMContentLoaded', () => {
     // Sidebar accordion filters
     const filterConfig = [
         {
-            group: 'Financial Impact', filters: [
-                { key: 'Profit?',            label: 'Profit Impact' },
-                { key: 'Cash Spend Timing',  label: 'Cash Spend Timing' },
-                { key: 'Cash Receipt Timing',label: 'Cash Receipt Timing' },
-                { key: 'Short term benefit', label: 'Short Term Benefit' },
-                { key: 'Find in  Reports',   label: 'Financial Reports' }
+            group: 'Short Term Benefit', filters: [
+                { key: 'Short term benefit', label: 'Short Term Benefit' }
             ]
         },
         {
-            group: 'Effort & Context', filters: [
+            group: 'Department & Category', filters: [
                 { key: 'Key Department', label: 'Department' },
-                { key: 'Category',       label: 'Category' },
-                { key: 'Pillar',         label: 'Pillar' }
+                { key: 'Category',       label: 'Category' }
             ]
         },
         {
-            group: 'Applicability', filters: [
+            group: 'Types of Organizations', filters: [
                 { key: 'Solo/Micro',    label: 'Solo/Micro' },
                 { key: 'Large Co.',     label: 'Large Co.' },
                 { key: 'Non-profit',    label: 'Non-profit' },
@@ -42,11 +37,8 @@ document.addEventListener('DOMContentLoaded', () => {
             ]
         },
         {
-            group: 'Operational Context', filters: [
-                { key: 'Symptom or Root Cause', label: 'Symptom or Root' },
-                { key: 'Frequency',             label: 'Frequency' },
-                { key: 'Mentor',                label: 'Mentor' },
-                { key: 'Find in Bookkeeping?',  label: 'Bookkeeping' }
+            group: 'Frequency', filters: [
+                { key: 'Frequency', label: 'Frequency' }
             ]
         }
     ];
@@ -334,6 +326,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     devUploadBtn.addEventListener('click', () => {
         localStorage.removeItem(DEV_STORAGE_KEY);
+        document.getElementById('total-available').textContent = '0';
         appContainer.classList.add('hidden');
         testPanel.classList.remove('hidden');
         testFileInput.value = '';
@@ -390,6 +383,8 @@ document.addEventListener('DOMContentLoaded', () => {
         strategies = data;
         filteredStrategies = []; // Start empty
 
+        document.getElementById('total-available').textContent = data.length;
+
         testPanel.classList.add('hidden');
         appContainer.classList.remove('hidden');
 
@@ -440,6 +435,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Second pass: populate options with cascading counts from the start
         rebuildPrimaryOptions(0);
+        updatePrimaryActiveCount();
     }
 
     // Rebuild option counts for all filters at fromIndex and to the right.
@@ -536,7 +532,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function updatePrimaryActiveCount() {
         const count = primaryFilterConfig.filter(f => activePrimaryFilters[f.key]?.size > 0).length;
-        primaryActiveCount.textContent = `${count} of ${primaryFilterConfig.length} active`;
+        primaryActiveCount.textContent = `${count} of ${primaryFilterConfig.length} active filters`;
         primaryActiveCount.className = 'primary-active-badge' + (count >= 2 ? ' ready' : '');
 
         primaryFilterConfig.forEach(f => {
@@ -621,10 +617,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 const innerGroup = document.createElement('div');
                 innerGroup.className = 'filter-group';
 
-                const title = document.createElement('div');
-                title.className = 'filter-title';
-                title.textContent = conf.label;
-                innerGroup.appendChild(title);
+                if (groupConf.filters.length > 1) {
+                    const title = document.createElement('div');
+                    title.className = 'filter-title';
+                    title.textContent = conf.label;
+                    innerGroup.appendChild(title);
+                }
 
                 const optionsDiv = document.createElement('div');
                 optionsDiv.className = 'filter-options';
